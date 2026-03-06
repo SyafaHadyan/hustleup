@@ -5,6 +5,9 @@ import (
 	"log"
 	"time"
 
+	userhandler "github.com/SyafaHadyan/worku/internal/app/user/interface/rest"
+	userrepository "github.com/SyafaHadyan/worku/internal/app/user/repository"
+	userusecase "github.com/SyafaHadyan/worku/internal/app/user/usecase"
 	"github.com/SyafaHadyan/worku/internal/infra/db"
 	"github.com/SyafaHadyan/worku/internal/infra/env"
 	fiberapp "github.com/SyafaHadyan/worku/internal/infra/fiber"
@@ -39,11 +42,17 @@ func Start() *Bootstrap {
 
 	jwt := jwt.New(config)
 
-	payment := payment.New(config)
+	_ = payment.New(config)
 
 	app := fiberapp.New(config)
 
 	middleware := middleware.NewMiddleware(*jwt)
+
+	userRepository := userrepository.NewUserDB(database)
+
+	userUseCase := userusecase.NewUserUseCase(userRepository, jwt, redis)
+
+	userhandler.NewUserHandler(app.Router, validator, middleware, userUseCase, config)
 
 	log.Printf("startup time: %v", time.Since(startTime))
 
@@ -55,9 +64,6 @@ func Start() *Bootstrap {
 		Redis:     redis,
 		JWT:       jwt,
 	}
-
-	// TODO: remove
-	log.Println(config, validator, database, redis, payment, app, middleware)
 
 	return &Bootstrap
 }

@@ -11,7 +11,7 @@ import (
 
 type JWTItf interface {
 	GenerateToken(userID uuid.UUID) (string, error)
-	ValidateToken(tokenString string) (uuid.UUID, string, error)
+	ValidateToken(tokenString string) (uuid.UUID, error)
 }
 
 type JWT struct {
