@@ -14,10 +14,6 @@ type ResponseGetCourseList struct {
 	Price      uint32    `json:"price"`
 }
 
-type GetCourseInfo struct {
-	ID string `json:"id" validate:"required,uuid_rfc4122"`
-}
-
 type ResponseGetCourseInfo struct {
 	ID          uuid.UUID `json:"id"`
 	Name        string    `json:"name"`

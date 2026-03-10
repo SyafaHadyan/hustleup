@@ -18,6 +18,7 @@ import (
 type CourseUseCaseItf interface {
 	GetCourseList(offset int, limit int) ([]dto.ResponseGetCourseList, error)
 	GetCourseInfo(courseID uuid.UUID) (dto.ResponseGetCourseInfo, error)
+	SearchCourse(query string) ([]dto.ResponseSearchCourse, error)
 }
 
 type CourseUseCase struct {
@@ -41,7 +42,7 @@ func (u *CourseUseCase) GetCourseList(offset int, limit int) ([]dto.ResponseGetC
 
 	offset = offset * limit
 
-	err := u.courseRepo.GetCourseList(offset, limit, &course)
+	err := u.courseRepo.GetCourseList(&offset, &limit, &course)
 	if err != nil {
 		return nil, err
 	}
@@ -99,4 +100,25 @@ func (u *CourseUseCase) GetCourseInfo(courseID uuid.UUID) (dto.ResponseGetCourse
 	}()
 
 	return course.ParseToDTOResponseGetCourseInfo(), nil
+}
+
+func (u *CourseUseCase) SearchCourse(query string) ([]dto.ResponseSearchCourse, error) {
+	var course []entity.Course
+
+	err := u.courseRepo.SearchCourse(&query, &course)
+	if err != nil {
+		return nil, err
+	}
+
+	if len(course) == 0 {
+		return nil, gorm.ErrRecordNotFound
+	}
+
+	courseList := make([]dto.ResponseSearchCourse, len(course))
+
+	for i, courseItem := range course {
+		courseList[i] = courseItem.ParseToDTOResponseSearchCourse()
+	}
+
+	return courseList, nil
 }

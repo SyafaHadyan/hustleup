@@ -11,8 +11,8 @@ import (
 
 type Course struct {
 	ID          uuid.UUID      `json:"id" gorm:"type:char(36);primaryKey"`
-	Name        string         `json:"name" gorm:"type:nvarchar(256)"`
-	Description string         `json:"description" gorm:"type:nvarchar(2048)"`
+	Name        string         `json:"name" gorm:"type:nvarchar(256);index:idx_fulltext_search,class:FULLTEXT"`
+	Description string         `json:"description" gorm:"type:nvarchar(2048);index:idx_fulltext_search,class:FULLTEXT"`
 	CoverImage  string         `json:"cover_image" gorm:"type:nvarchar(512)"`
 	Price       uint32         `json:"price" gorm:"type:integer unsigned"`
 	CreatedAt   time.Time      `json:"created_at" gorm:"type:timestamp;autoCreateTime"`

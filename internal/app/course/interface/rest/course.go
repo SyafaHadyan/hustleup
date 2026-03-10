@@ -33,6 +33,7 @@ func NewCourseHandler(
 
 	routerGroup.Get("/list/:page/:limit", middleware.Authentication, courseHandler.GetCourseList)
 	routerGroup.Get("/:id", middleware.Authentication, courseHandler.GetCourseInfo)
+	routerGroup.Get("/search/:query", middleware.Authentication, courseHandler.SearchCourse)
 }
 
 func (h *CourseHandler) GetCourseList(ctx *fiber.Ctx) error {
@@ -95,5 +96,27 @@ func (h *CourseHandler) GetCourseInfo(ctx *fiber.Ctx) error {
 	return ctx.Status(http.StatusOK).JSON(fiber.Map{
 		"message": "retrieved course info",
 		"payload": res,
+	})
+}
+
+func (h *CourseHandler) SearchCourse(ctx *fiber.Ctx) error {
+	query := ctx.Params("query")
+
+	res, err := h.CourseUseCase.SearchCourse(query)
+	if err == gorm.ErrRecordNotFound {
+		return fiber.NewError(
+			http.StatusNotFound,
+			"search query doesn't match any course",
+		)
+	} else if err != nil {
+		return fiber.NewError(
+			http.StatusInternalServerError,
+			"failed to search course",
+		)
+	}
+
+	return ctx.Status(http.StatusOK).JSON(fiber.Map{
+		"messsage": "retrieved course list",
+		"payload":  res,
 	})
 }
