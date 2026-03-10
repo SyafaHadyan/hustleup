@@ -40,3 +40,12 @@ func (c *Course) ParseToDTOResponseGetCourseInfo() dto.ResponseGetCourseInfo {
 		UpdatedAt:   c.UpdatedAt,
 	}
 }
+
+func (c *Course) ParseToDTOResponseSearchCourse() dto.ResponseSearchCourse {
+	return dto.ResponseSearchCourse{
+		ID:         c.ID,
+		Name:       c.Name,
+		CoverImage: c.CoverImage,
+		Price:      c.Price,
+	}
+}

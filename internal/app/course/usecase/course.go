@@ -46,6 +46,10 @@ func (u *CourseUseCase) GetCourseList(offset int, limit int) ([]dto.ResponseGetC
 		return nil, err
 	}
 
+	if len(course) == 0 {
+		return nil, gorm.ErrRecordNotFound
+	}
+
 	courseList := make([]dto.ResponseGetCourseList, len(course))
 
 	for i, courseItem := range course {
