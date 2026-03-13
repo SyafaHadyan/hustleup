@@ -12,6 +12,7 @@ func Migrate(db *gorm.DB) {
 		entity.User{},
 		entity.UserDetail{},
 		entity.Course{},
+		entity.ResponseAnalyzeCV{},
 		entity.Order{},
 		entity.Payment{},
 	)

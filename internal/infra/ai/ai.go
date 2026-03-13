@@ -1,0 +1,114 @@
+// Package ai connects and tests AI from multiple providers
+package ai
+
+import (
+	"context"
+	"fmt"
+	"log"
+	"mime/multipart"
+
+	"github.com/SyafaHadyan/worku/internal/domain/dto"
+	"github.com/SyafaHadyan/worku/internal/infra/env"
+	"github.com/openai/openai-go/v3"
+	"github.com/openai/openai-go/v3/option"
+	"github.com/openai/openai-go/v3/responses"
+)
+
+type AIItf interface {
+	AnalyzeCV(ctx context.Context, analyzeCV dto.AnalyzeCV, file *multipart.FileHeader) (string, error)
+}
+
+type AI struct {
+	OpenAI *openai.Client
+	env    *env.Env
+}
+
+func New(env *env.Env) *AI {
+	openAI := openai.NewClient(
+		option.WithAPIKey(env.OpenAIAPIKey),
+	)
+
+	AI := AI{
+		OpenAI: &openAI,
+		env:    env,
+	}
+
+	return &AI
+}
+
+func Test(a *AI) {
+	log.Println("testing openai connection")
+
+	_, err := a.OpenAI.Chat.Completions.New(context.TODO(), openai.ChatCompletionNewParams{
+		Messages: []openai.ChatCompletionMessageParamUnion{
+			openai.UserMessage("Say \"a\""),
+		},
+		Model: a.env.OpenAIAllowedModel,
+	})
+	if err != nil {
+		log.Panic("openai connection failed")
+	}
+
+	log.Println("openai connection success")
+}
+
+func (a *AI) AnalyzeCV(ctx context.Context, analyzeCV dto.AnalyzeCV, file *multipart.FileHeader) (string, error) {
+	fileReader, err := file.Open()
+	if err != nil {
+		return "", err
+	}
+
+	inputfile := openai.File(fileReader, file.Filename, "application/pdf")
+
+	storedFile, err := a.OpenAI.Files.New(
+		ctx,
+		openai.FileNewParams{
+			File:    inputfile,
+			Purpose: openai.FilePurposeUserData,
+		},
+	)
+	if err != nil {
+		log.Println(err)
+		return "", err
+	}
+
+	params := responses.ResponseNewParams{
+		Model: a.env.OpenAIAllowedModel,
+	}
+
+	params.Input = responses.ResponseNewParamsInputUnion{
+		OfInputItemList: responses.ResponseInputParam{
+			responses.ResponseInputItemParamOfMessage(
+				responses.ResponseInputMessageContentListParam{
+					responses.ResponseInputContentUnionParam{
+						OfInputFile: &responses.ResponseInputFileParam{
+							FileID: openai.String(storedFile.ID),
+							Type:   "input_file",
+						},
+					},
+					responses.ResponseInputContentUnionParam{
+						OfInputText: &responses.ResponseInputTextParam{
+							Text: "analyze my cv",
+							Type: "input_text",
+						},
+					},
+					responses.ResponseInputContentUnionParam{
+						OfInputText: &responses.ResponseInputTextParam{
+							Text: fmt.Sprintf("%#v", analyzeCV),
+							Type: "input_text",
+						},
+					},
+				},
+				"user",
+			),
+		},
+	}
+
+	res, err := a.OpenAI.Responses.New(ctx, params)
+	if err != nil {
+		log.Println(err)
+		return "", err
+	}
+
+	return res.OutputText(), nil
+}
