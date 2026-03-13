@@ -5,12 +5,16 @@ import (
 	"log"
 	"time"
 
+	aihandler "github.com/SyafaHadyan/worku/internal/app/ai/interface/rest"
+	airepository "github.com/SyafaHadyan/worku/internal/app/ai/repository"
+	aiusecase "github.com/SyafaHadyan/worku/internal/app/ai/usecase"
 	coursehandler "github.com/SyafaHadyan/worku/internal/app/course/interface/rest"
 	courserepository "github.com/SyafaHadyan/worku/internal/app/course/repository"
 	courseusecase "github.com/SyafaHadyan/worku/internal/app/course/usecase"
 	userhandler "github.com/SyafaHadyan/worku/internal/app/user/interface/rest"
 	userrepository "github.com/SyafaHadyan/worku/internal/app/user/repository"
 	userusecase "github.com/SyafaHadyan/worku/internal/app/user/usecase"
+	"github.com/SyafaHadyan/worku/internal/infra/ai"
 	"github.com/SyafaHadyan/worku/internal/infra/db"
 	"github.com/SyafaHadyan/worku/internal/infra/env"
 	fiberapp "github.com/SyafaHadyan/worku/internal/infra/fiber"
@@ -19,6 +23,7 @@ import (
 	"github.com/SyafaHadyan/worku/internal/infra/redis"
 	"github.com/SyafaHadyan/worku/internal/middleware"
 	"github.com/go-playground/validator/v10"
+	"github.com/gorilla/schema"
 	"gorm.io/gorm"
 )
 
@@ -39,9 +44,13 @@ func Start() *Bootstrap {
 
 	validator := validator.New()
 
+	decoder := schema.NewDecoder()
+
 	database := db.New(config)
 
 	redis := redis.New(config)
+
+	ai := ai.New(config)
 
 	jwt := jwt.New(config)
 
@@ -53,12 +62,15 @@ func Start() *Bootstrap {
 
 	userRepository := userrepository.NewUserDB(database)
 	courseRepository := courserepository.NewCourseDB(database)
+	aiRepository := airepository.NewAIDB(database)
 
 	userUseCase := userusecase.NewUserUseCase(userRepository, jwt, redis)
 	courseUseCase := courseusecase.NewCourseUseCase(courseRepository, redis)
+	aiUseCase := aiusecase.NewAIUseCase(aiRepository, ai)
 
 	userhandler.NewUserHandler(app.Router, validator, middleware, userUseCase, config)
 	coursehandler.NewCourseHandler(app.Router, validator, middleware, courseUseCase)
+	aihandler.NewAIHandler(app.Router, validator, decoder, middleware, aiUseCase)
 
 	log.Printf("startup time: %v", time.Since(startTime))
 

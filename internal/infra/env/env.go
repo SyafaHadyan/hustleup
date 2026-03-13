@@ -31,6 +31,8 @@ type Env struct {
 	JWTSecretKey                      string `env:"JWT_SECRET_KEY"`
 	JWTExpiredDays                    uint   `env:"JWT_EXPIRED_DAYS"`
 	MidtransServerKey                 string `env:"MIDTRANS_SERVER_KEY"`
+	OpenAIAPIKey                      string `env:"OPENAI_API_KEY"`
+	OpenAIAllowedModel                string `env:"OPENAI_ALLLOWED_MODEL"`
 }
 
 func New() *Env {
